@@ -5,8 +5,7 @@ import numpy as np
 import sqlite_vss
 
 from . import embeddings
-from . import schemas
-
+from .schemas import ChunkRecord, Resource, chunk_record_factory
 
 SALMON_DIR = os.path.expanduser('~/salmon')
 DB_PATH = os.path.join(SALMON_DIR, 'salmon.db')
@@ -28,7 +27,7 @@ class DbAlreadyExistsException(Exception):
 
 
 def create_db():
-    if os.path.exists(DB_FILE_PATH):
+    if os.path.exists(DB_PATH):
         raise DbAlreadyExistsException('Database already exists.')
 
     conn = create_connection(True)
@@ -79,7 +78,7 @@ def resource_exists_by_url(url: str):
     return result is not None
 
 
-def save_resource(resource: schemas.Resource):
+def save_resource(resource: Resource):
     conn = create_connection()
     cursor = conn.cursor()
 
@@ -113,7 +112,7 @@ def update_vss_index():
     conn.close()
 
 
-def get_most_similar_articles_based_on_n_chunks(n: int, query_embedding: np.ndarray) -> list[schemas.ChunkRecord]:
+def get_most_similar_articles_based_on_n_chunks(n: int, query_embedding: np.ndarray) -> list[ChunkRecord]:
     conn = create_connection()
     cursor = create_cursor_with_row_factory(conn)
     cursor.execute('''
@@ -131,13 +130,13 @@ def get_most_similar_articles_based_on_n_chunks(n: int, query_embedding: np.ndar
     group by r.rowid
     order by dist
     ''', [query_embedding, n])
-    results: list[schemas.ChunkRecord] = cursor.fetchall()
+    results: list[ChunkRecord] = cursor.fetchall()
     cursor.close()
     conn.close()
     return results
 
 
-def get_top_n_chunks(n: int, query_embedding: np.ndarray) -> list[schemas.ChunkRecord]:
+def get_top_n_chunks(n: int, query_embedding: np.ndarray) -> list[ChunkRecord]:
     conn = create_connection()
     cursor = create_cursor_with_row_factory(conn)
     cursor.execute('''
@@ -154,7 +153,7 @@ def get_top_n_chunks(n: int, query_embedding: np.ndarray) -> list[schemas.ChunkR
     )
     order by dist
     ''', [query_embedding, n])
-    results: list[schemas.ChunkRecord] = cursor.fetchall()
+    results: list[ChunkRecord] = cursor.fetchall()
     cursor.close()
     conn.close()
     return results
@@ -162,5 +161,56 @@ def get_top_n_chunks(n: int, query_embedding: np.ndarray) -> list[schemas.ChunkR
 
 def create_cursor_with_row_factory(conn):
     cursor = conn.cursor()
-    cursor.row_factory = schemas.chunk_record_factory
+    cursor.row_factory = chunk_record_factory
     return cursor
+
+
+def get_resource(resource_id: int) -> Resource:
+    conn = create_connection()
+    cursor = conn.cursor()
+
+    def row_factory(cursor, row):
+        return Resource.from_args(*row)
+
+    cursor.row_factory = row_factory
+
+    cursor.execute('''
+    SELECT rowid, url, title
+    FROM resources
+    WHERE rowid = ?
+    ''', [resource_id])
+    return cursor.fetchone()
+
+
+def delete_resource(resource_id: int):
+    conn = create_connection()
+    cursor = conn.cursor()
+    resource = get_resource(resource_id)
+    cursor.execute(
+        '''
+        DELETE FROM vss_chunks
+        WHERE rowid IN (
+            SELECT rowid
+            FROM chunks
+            WHERE resource_id = ?
+        )
+        ''',
+        [resource_id]
+    )
+    cursor.execute(
+        '''
+        DELETE FROM chunks
+        WHERE resource_id = ?
+        ''',
+        [resource_id]
+    )
+    cursor.execute(
+        '''
+        DELETE FROM resources
+        WHERE rowid = ?
+        ''', [resource_id]
+    ).fetchone()
+    cursor.close()
+    conn.commit()
+    conn.close()
+    return resource

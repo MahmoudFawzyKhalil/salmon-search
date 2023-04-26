@@ -136,6 +136,18 @@ def search(query: str = typer.Argument(..., help="Search query."),
     elif o == "json":
         rich.print_json(data=results)
 
+@app.command()
+def delete(resource_id: int = typer.Argument(..., help="resource_id for resource to delete and un-index.")):
+    """
+    Delete a resource from the index.
+
+    salmon delete 1
+    """
+    import rich
+    from . import db
+
+    resource = db.delete_resource(resource_id)
+    print_resource_table([resource])
 
 def validate_url(url) -> bool:
     import validators
