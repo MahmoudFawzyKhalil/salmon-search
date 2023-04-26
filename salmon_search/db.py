@@ -8,19 +8,15 @@ from . import embeddings
 from . import schemas
 
 
-def get_db_dir():
-    here = os.path.dirname(__file__)
-    db_file = os.path.join(here, '../db/salmon.db')
-    db_file = os.path.normpath(db_file)
-    return db_file
-
-
-DB_FILE_PATH = get_db_dir()
+SALMON_DIR = os.path.expanduser('~/salmon')
+DB_PATH = os.path.join(SALMON_DIR, 'salmon.db')
+# create ~/salmon directory if it doesn't exist
+os.makedirs(SALMON_DIR, exist_ok=True)
 
 
 def create_connection(create: bool = False):
     mode = f"rw{create and 'c' or ''}"
-    uri = f"file:{DB_FILE_PATH}?mode={mode}"
+    uri = f"file:{DB_PATH}?mode={mode}"
     conn = sqlite3.connect(uri, uri=True)
     conn.enable_load_extension(True)
     sqlite_vss.load(conn)
@@ -62,7 +58,7 @@ def create_db():
 
     # Create empty chunk embedding to avoid issue with creating empty vss_table
     zero_array = np.zeros(embeddings.VECTOR_SIZE)
-    conn.execute(f'''
+    conn.execute('''
         INSERT INTO vss_chunks (chunk_embedding)
             VALUES (?)
             ''', [zero_array])
