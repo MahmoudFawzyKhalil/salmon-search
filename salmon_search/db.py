@@ -214,3 +214,20 @@ def delete_resource(resource_id: int):
     conn.commit()
     conn.close()
     return resource
+
+
+def get_chunk(chunk_id: int) -> str:
+    conn = create_connection()
+    cursor = conn.cursor()
+    chunk = cursor.execute(
+        '''
+        SELECT chunk
+        FROM chunks
+        WHERE rowid = ?
+        ''',
+        [chunk_id]
+    ).fetchone()
+    if chunk:
+        return chunk[0]
+    else:
+        return f'No chunk with ID {chunk_id}'

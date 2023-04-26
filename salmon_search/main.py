@@ -136,6 +136,7 @@ def search(query: str = typer.Argument(..., help="Search query."),
     elif o == "json":
         rich.print_json(data=results)
 
+
 @app.command()
 def delete(resource_id: int = typer.Argument(..., help="resource_id for resource to delete and un-index.")):
     """
@@ -148,6 +149,29 @@ def delete(resource_id: int = typer.Argument(..., help="resource_id for resource
 
     resource = db.delete_resource(resource_id)
     print_resource_table([resource])
+
+@app.command()
+def get(rid: int = typer.Option(None, help="Resource ID of resource to get."),
+        cid: int = typer.Option(None, help="Chunk ID of chunk to get")):
+    """
+    Get a resource or chunk.
+
+    salmon get --rid 1
+    """
+    import click
+    import rich
+
+    from . import db
+
+    if rid is not None:
+        resource = db.get_resource(rid)
+        print_resource_table([resource])
+    elif cid is not None:
+        chunk = db.get_chunk(cid)
+        rich.print(chunk)
+    else:
+        raise click.ClickException("Either --rid or --cid must be specified.")
+
 
 def validate_url(url) -> bool:
     import validators
