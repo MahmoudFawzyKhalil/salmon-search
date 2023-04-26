@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "salmon-search"
+version = "0.1.0"
+description = ""
+authors = ["Mahmoud Fawzy <mahmoudfawzykhalil98@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "salmon_search" }]
+
+[tool.poetry.scripts]
+salmon = "salmon_search.main:app"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+typer = { extras = ["all"], version = "^0.7.0" }
+validators = "^0.20.0"
+numpy = "^1.24.3"
+sqlite-vss = "^0.0.4"
+sentence-transformers = "^2.2.2"
+beautifulsoup4 = "^4.12.2"
+langchain = "^0.0.149"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
