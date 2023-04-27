@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 import bs4
 import requests
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from requests import Response
 
 from . import embeddings
 from .schemas import Resource
@@ -23,7 +24,8 @@ def download_youtube_video_title_and_text_chunks(url):
 def is_youtube_video(url):
     url_parts = urlparse(url)
     return url_parts.netloc.find("youtu.be") != -1 \
-        or url_parts.netloc.find("youtube") != -1
+        or url_parts.netloc.find("youtube") != -1 \
+        and url_parts.path.find("playlist") == -1
 
 
 def create_resource(url: str) -> Resource:
@@ -34,16 +36,37 @@ def create_resource(url: str) -> Resource:
     else:
         resource.title, resource.chunks = download_article_title_and_text_chunks(url)
 
+    if len(resource.chunks) == 0:
+        raise Exception(f"No text chunks found for {url}")
+
+    if len(resource.chunks) > 100:
+        raise Exception(f"Too many text chunks (> 100) found for {url}")
+
     resource.embeddings = embeddings.encode(resource.chunks, show_progress_bar=True)
     return resource
 
 
 def download_article_title_and_text_chunks(url: str) -> tuple[str, list[str]]:
     # Download HTML article
-    html = requests.get(url).content
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
+    }
+    print(f"Downloading... {url}")
+    res: Response = requests.get(url, headers=headers, timeout=(10, 10), allow_redirects=Truez)
+    print(res)
+    if res.status_code != 200:
+        raise Exception(f"Failed to download article from {url}, status code {res.status_code}")
+
+    html = res.content
     # Parse HTML
     soup = bs4.BeautifulSoup(html, 'html.parser')
     chunks = SPLITTER.split_text(soup.get_text().replace("\n\n\n", ""))
-    return soup.find('title').text, chunks
+    return extract_title(url, soup), chunks
 
-    # Consider: index all code examples separately by grabbing pre tags?
+
+def extract_title(url: str, soup: bs4.BeautifulSoup) -> str:
+    title = soup.find('title')
+    if title is not None:
+        return title.text
+    # Fallback to URL
+    return urlparse(url).path

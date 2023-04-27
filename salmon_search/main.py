@@ -33,6 +33,7 @@ def index(url: str = typer.Option(None, help="URL of the resource to index."),
     import click
 
     from . import db
+    db.update_vss_index()
 
     if url is not None:
         resources = [index_url(url)]
@@ -65,8 +66,8 @@ def index_url(url: str) -> Resource | None:
     try:
         resource: Resource = resources.create_resource(url)
         db.save_resource(resource)
-    except Exception:
-        rich.print(f"[red]Error saving resource {url} to database. Skipping.[/red]")
+    except Exception as e:
+        rich.print(f"[red]Error saving resource {url} to database. Skipping. Error:{str(e)}[/red]")
         return None
     return resource
 
@@ -182,7 +183,7 @@ def validate_url(url) -> bool:
         rich.print(f"[red]Invalid URL: {url}, skipping.[/red]")
         return False
     if db.resource_exists_by_url(url):
-        rich.print(f"[red]Resource already exists: {url}, skipping.[/red]")
+        # rich.print(f"[green]Resource already exists: {url}, skipping.[/green]")
         return False
     return True
 
