@@ -23,7 +23,10 @@ def init():
 
 @app.command()
 def index(url: str = typer.Option(None, help="URL of the resource to index."),
-          file: Path = typer.Option(None, help="Path to a file with URLs of the resources to index.")):
+          file: Path = typer.Option(None, help="Path to a file with URLs of the resources to index."),
+          playlist: str = typer.Option(None, help="YouTube playlist ID to index."),
+          apikey: str = typer.Option(None, help="YouTube API key. Must specify if --playlist is used."),
+          maxvideos: int = typer.Option(50, help="Maximum number of playlist videos to index")):
     """
     Index a resource e.g. an article, or a YouTube video.
 
@@ -39,10 +42,73 @@ def index(url: str = typer.Option(None, help="URL of the resource to index."),
         resources = [index_url(url)]
     elif file is not None:
         resources = index_file(file)
+    elif playlist is not None:
+        import rich
+        resources = index_playlist(playlist, apikey, maxvideos)
+
+        if apikey is None:
+            raise click.ClickException("--apikey must be specified if --playlist is used.")
     else:
         raise click.ClickException("Either --url or --file must be specified.")
     db.update_vss_index()
     print_resource_table(resources)
+
+
+def index_playlist(playlist_id: str, apikey: str, maxvideos: int) -> list[Resource]:
+    from . import resources
+    from . import db
+
+    json_dict = get_playlist_items(playlist_id, apikey)
+
+    videos = []
+    extract_videos(json_dict, videos)
+
+    next_page_token = json_dict["nextPageToken"]
+    while next_page_token and len(videos) < maxvideos:
+        json_dict = get_playlist_items(playlist_id, apikey, next_page_token)
+        extract_videos(json_dict, videos)
+        next_page_token = json_dict.get("nextPageToken")
+
+    created_resources = []
+    for video in videos:
+        url = f"https://youtu.be/{video['videoId']}"
+        valid = validate_url(url)
+        if not valid:
+            continue
+        resource: Resource = resources.create_youtube_video_resource(
+            url,
+            video["title"],
+            video["description"])
+        created_resources.append(resource)
+        db.save_resource(resource)
+
+    return created_resources
+
+
+def get_playlist_items(playlist_id: str, apikey: str, next_page_token: str = None) -> dict:
+    import requests
+    url = "https://content-youtube.googleapis.com/youtube/v3/playlistItems"
+    params = {
+        "maxResults": 50,
+        "part": "id,snippet",
+        "playlistId": playlist_id,
+        "key": apikey
+    }
+    if next_page_token:
+        params["pageToken"] = next_page_token
+
+    res = requests.get(url, params=params)
+    return res.json()
+
+
+def extract_videos(json_dict, videos):
+    for item in json_dict["items"]:
+        video = {
+            "videoId": item["snippet"]["resourceId"]["videoId"],
+            "title": item["snippet"]["title"],
+            "description": item["snippet"]["description"]
+        }
+        videos.append(video)
 
 
 def index_file(file: Path) -> list[Resource]:
@@ -145,11 +211,11 @@ def delete(resource_id: int = typer.Argument(..., help="resource_id for resource
 
     salmon delete 1
     """
-    import rich
     from . import db
 
     resource = db.delete_resource(resource_id)
     print_resource_table([resource])
+
 
 @app.command()
 def get(rid: int = typer.Option(None, help="Resource ID of resource to get."),

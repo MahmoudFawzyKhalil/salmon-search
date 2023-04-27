@@ -52,8 +52,7 @@ def download_article_title_and_text_chunks(url: str) -> tuple[str, list[str]]:
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36'
     }
     print(f"Downloading... {url}")
-    res: Response = requests.get(url, headers=headers, timeout=(10, 10), allow_redirects=Truez)
-    print(res)
+    res: Response = requests.get(url, headers=headers, timeout=(10, 10), allow_redirects=True)
     if res.status_code != 200:
         raise Exception(f"Failed to download article from {url}, status code {res.status_code}")
 
@@ -70,3 +69,11 @@ def extract_title(url: str, soup: bs4.BeautifulSoup) -> str:
         return title.text
     # Fallback to URL
     return urlparse(url).path
+
+
+def create_youtube_video_resource(url: str, title: str, description: str) -> Resource:
+    resource = Resource(url)
+    resource.title = title
+    resource.chunks = [title, description]
+    resource.embeddings = embeddings.encode(resource.chunks, show_progress_bar=True)
+    return resource

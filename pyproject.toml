@@ -13,12 +13,11 @@ salmon = "salmon_search.main:app"
 python = "^3.10"
 typer = { extras = ["all"], version = "^0.7.0" }
 validators = "^0.20.0"
-sqlite-vss = "^0.0.4"
+sqlite-vss = "^0.0.5"
 sentence-transformers = "^2.2.2"
 beautifulsoup4 = "^4.12.2"
 langchain = "^0.0.149"
 requests = "^2.29.0"
-
 
 [build-system]
 requires = ["poetry-core"]
