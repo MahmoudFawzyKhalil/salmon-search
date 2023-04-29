@@ -3,6 +3,7 @@ from pathlib import Path
 import typer
 
 from .schemas import Resource, ChunkRecord
+from typing import List
 
 app = typer.Typer(rich_markup_mode="rich")
 
@@ -205,7 +206,7 @@ def search(query: str = typer.Argument(..., help="Search query."),
 
 
 @app.command()
-def delete(resource_id: int = typer.Argument(..., help="resource_id for resource to delete and un-index.")):
+def delete(resource_ids: List[int] = typer.Argument(..., help="resource_id for resource to delete and un-index.")):
     """
     Delete a resource from the index.
 
@@ -213,8 +214,11 @@ def delete(resource_id: int = typer.Argument(..., help="resource_id for resource
     """
     from . import db
 
-    resource = db.delete_resource(resource_id)
-    print_resource_table([resource])
+    deleted_resources = []
+    for rid in resource_ids:
+        resource = db.delete_resource(rid)
+        deleted_resources.append(resource)
+    print_resource_table(deleted_resources)
 
 
 @app.command()
