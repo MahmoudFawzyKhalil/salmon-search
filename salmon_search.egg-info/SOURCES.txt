@@ -1,0 +1,13 @@
+pyproject.toml
+salmon_search/__init__.py
+salmon_search/cli.py
+salmon_search/db.py
+salmon_search/embeddings.py
+salmon_search/resources.py
+salmon_search/schemas.py
+salmon_search.egg-info/PKG-INFO
+salmon_search.egg-info/SOURCES.txt
+salmon_search.egg-info/dependency_links.txt
+salmon_search.egg-info/entry_points.txt
+salmon_search.egg-info/top_level.txt
+tests/test_one.py

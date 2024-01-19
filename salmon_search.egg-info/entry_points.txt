@@ -1,0 +1,2 @@
+[console_scripts]
+salmonn = salmon_search.cli:main_cli

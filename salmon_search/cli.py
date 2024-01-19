@@ -1,9 +1,9 @@
 from pathlib import Path
+from typing import List
 
 import typer
 
-from .schemas import Resource, ChunkRecord
-from typing import List
+from salmon_search.schemas import Resource, ChunkRecord
 
 app = typer.Typer(rich_markup_mode="rich")
 
@@ -13,7 +13,7 @@ def init():
     """
     Initialize the sqlite database. Must be called before using any other command.
     """
-    from . import db
+    from salmon_search import db
     import click
 
     try:
@@ -36,7 +36,7 @@ def index(url: str = typer.Option(None, help="URL of the resource to index."),
     """
     import click
 
-    from . import db
+    from salmon_search import db
     db.update_vss_index()
 
     if url is not None:
@@ -56,8 +56,8 @@ def index(url: str = typer.Option(None, help="URL of the resource to index."),
 
 
 def index_playlist(playlist_id: str, apikey: str, maxvideos: int) -> list[Resource]:
-    from . import resources
-    from . import db
+    from salmon_search import resources
+    from salmon_search import db
 
     json_dict = get_playlist_items(playlist_id, apikey)
 
@@ -123,8 +123,8 @@ def index_file(file: Path) -> list[Resource]:
 
 
 def index_url(url: str) -> Resource | None:
-    from . import db
-    from . import resources
+    from salmon_search import db
+    from salmon_search import resources
     import rich
 
     valid = validate_url(url)
@@ -194,8 +194,8 @@ def search(query: str = typer.Argument(..., help="Search query."),
     salmon search "Where do Salmons live?"
     """
     import rich
-    from . import db
-    from . import embeddings
+    from salmon_search import db
+    from salmon_search import embeddings
 
     query_embedding = embeddings.encode(query)
     results: list[ChunkRecord] = db.get_most_similar_articles_based_on_n_chunks(n, query_embedding)
@@ -212,7 +212,7 @@ def delete(resource_ids: List[int] = typer.Argument(..., help="resource_id for r
 
     salmon delete 1
     """
-    from . import db
+    from salmon_search import db
 
     deleted_resources = []
     for rid in resource_ids:
@@ -232,7 +232,7 @@ def get(rid: int = typer.Option(None, help="Resource ID of resource to get."),
     import click
     import rich
 
-    from . import db
+    from salmon_search import db
 
     if rid is not None:
         resource = db.get_resource(rid)
@@ -246,7 +246,7 @@ def get(rid: int = typer.Option(None, help="Resource ID of resource to get."),
 
 def validate_url(url) -> bool:
     import validators
-    from . import db
+    from salmon_search import db
     import rich
 
     if not validators.url(url):
@@ -258,5 +258,5 @@ def validate_url(url) -> bool:
     return True
 
 
-if __name__ == "__main__":
+def main_cli():
     app()

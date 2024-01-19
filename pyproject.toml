@@ -1,24 +1,26 @@
-[tool.poetry]
-name = "salmon-search"
-version = "0.1.0"
-description = ""
-authors = ["Mahmoud Fawzy <mahmoudfawzykhalil98@gmail.com>"]
-readme = "README.md"
-packages = [{ include = "salmon_search" }]
-
-[tool.poetry.scripts]
-salmon = "salmon_search.main:app"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-typer = { extras = ["all"], version = "^0.7.0" }
-validators = "^0.20.0"
-sqlite-vss = "^0.0.5"
-sentence-transformers = "^2.2.2"
-beautifulsoup4 = "^4.12.2"
-langchain = "^0.0.149"
-requests = "^2.29.0"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# https://stackoverflow.com/questions/75597558/python-pyproject-toml-settings-for-use-with-hatchling-to-target-command-line-app
+[project.scripts]
+salmonn = "salmon_search.cli:main_cli"
+
+[project]
+name = "salmon_search"
+version = "0.0.1"
+authors = [
+    { name="Example Author", email="author@example.com" },
+]
+description = "A small example package"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/pypa/sampleproject"
+Issues = "https://github.com/pypa/sampleproject/issues"
