@@ -4,7 +4,7 @@
 ```sh
 # local dev
 python -m venv venv
-source venv/bin/activation
+source venv/bin/activate
 pip install -r requirements.txt
 
 # build
